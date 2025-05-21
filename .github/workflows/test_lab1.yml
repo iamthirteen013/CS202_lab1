@@ -1,0 +1,80 @@
+name: Lab1 test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Install dependencies
+      run: sudo apt-get update && sudo apt-get install -y g++ make
+    
+
+    - name: Test 1 - Check myfunctions.h
+      run: |
+        cd Lab1
+        file="myfunctions.h"
+        if grep -q '#include\s*<iostream>' "$file" && \
+           grep -q 'using\s*namespace\s*std;' "$file" && \
+           grep -q 'void\s*promptUser()' "$file"; then
+          echo "Test 1: Passed"
+        else
+          echo "Test 1: Failed - Check includes or prototype"
+          exit 1
+        fi
+
+    - name: Test 2 - Check myfunctions.cpp
+      run: |
+        cd Lab1
+        file="myfunctions.cpp"
+        if grep -q '#include *"myfunctions.h"' "$file" && \
+           grep -q 'cin *>>' "$file" && \
+           grep -q 'cout *<<' "$file"; then
+          echo "Test 2: Passed"
+        else
+          echo "Test 2: Failed - Check includes, cin or cout usage"
+          exit 1
+        fi
+
+    - name: Test 3 - Check main.cpp has 2 couts
+      
+      run: |
+        cd Lab1
+        cat main.cpp
+        
+        cleaned=$(sed -E 's/\/\*.*\*\///g' main.cpp | sed -E 's/\/\/.*//g')
+        echo "Cleaned main.cpp:"
+        echo "$cleaned"
+         
+
+        # Count actual cout occurrences (not in comments)
+        count=$(echo "$cleaned" | grep -o 'cout *<<' | wc -l)
+
+        if [ "$count" -eq 2 ]; then
+          echo "Test 3: Passed"
+        else
+          echo "Test 3: Failed - Expected 2 couts, found $count"
+          exit 1
+        fi
+          
+
+    - name: Test 4 - Build and Run
+      run: |
+        cd Lab1
+        make
+        if ./averager < /dev/null; then
+          echo "Test 4: Passed"
+        else
+          echo "Test 4: Failed - Build or run error"
+          exit 1
+        fi
+        make clean
+
